@@ -1,0 +1,74 @@
+kubectl create secret generic openldap --from-literal=adminpassword=111020 --from-literal=users=wangyu,syy --from-literal=passwords=111020,111020
+
+kubectl apply -f openldap-deployment.YAML
+
+kubectl apply -f openldap-svr.yaml
+
+ldapsearch -x -h 10.117.233.4:1389  -b 'dc=example,dc=org'
+
+ldapadd -h  10.117.233.4:1389 -D cn=admin,dc=example,dc=org -w 111020 -f usradd.ldif
+
+ldappasswd -h  10.117.233.4:1389 -s welcome123 -w 111020 -D cn=admin,dc=example,dc=org -x "uid=yuwa,ou=users,dc=example,dc=org"
+
+ldappasswd -h  10.117.233.4:1389 -s welcome123 -w 111020 -D cn=admin,dc=example,dc=org -x "uid=nzq,ou=users,dc=example,dc=org"
+
+
+openssl req -new -x509 -sha256 -days 3650 -newkey rsa:4096 -extensions v3_req -out openid-ca.pem -keyout openid-key.pem -config openssl-dex.conf -subj "/CN=kube-ca" -nodes
+
+kubectl create ns dex
+
+kubectl create secret tls dex.vmware.com.tls --key openid-key.pem --cert openid-ca.pem -n dex
+
+kubectl apply -f dex-deployment.yaml
+
+# /etc/hosts
+10.117.233.5 dex.vmware.com
+
+
+ # kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+ # kubectl apply -f dex-ingress.yaml
+
+
+kubectl edit configmap coredns -n kube-system
+rewrite name dex.vmware.com dex.dex.svc.cluster.local
+
+./main --client-secret ZXhhbXBsZS1hcHAtc2VjcmV0 --client-id example-app --issuer https://dex.vmware.com/
+
+cat  openid-ca.pem | base64
+
+
+openssl req -new -x509 -sha256 -days 3650 -newkey rsa:4096 -extensions v3_req -out proxy-ca.pem -keyout proxy-key.pem -config openssl-proxy.conf -subj "/CN=kube-ca" -nodes
+cat  proxy-ca.pem | base64
+cat  proxy-key.pem | base64
+
+
+
+
+kubectl apply -f kube-oidc-proxy-secrets.yaml
+kubectl apply -f kube-oidc-proxy.yaml
+
+# /etc/hosts
+10.117.233.5 dex.vmware.com
+10.117.233.7 oidcproxy.vmware.com
+
+kubectl oidc-login setup \
+  --oidc-issuer-url=https://dex.vmware.com \
+  --oidc-extra-scope=email
+  --certificate-authority=openid-ca.pem
+  --insecure-skip-tls-verify
+  --listen-address=127.0.0.1:8000 
+  --oidc-client-id=example-app \
+  --oidc-client-secret=ZXhhbXBsZS1hcHAtc2VjcmV0
+
+kubectl config set-credentials oidc \
+  --exec-api-version=client.authentication.k8s.io/v1beta1 \
+  --exec-command=kubectl \
+  --exec-arg=oidc-login \
+  --exec-arg=get-token \
+  --exec-arg=--oidc-issuer-url=https://dex.vmware.com \
+  --exec-arg=--oidc-client-id=example-app \
+  --exec-arg=--oidc-client-secret=ZXhhbXBsZS1hcHAtc2VjcmV0 \
+  --exec-arg=--extra-scope=profile \
+  --exec-arg=--extra-scope=email \
+  --exec-arg=--extra-scope=groups \
+  --exec-arg=--certificate-authority-data=$(base64 openid-ca.pem)

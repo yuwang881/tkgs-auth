@@ -1,0 +1,27 @@
+
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: devrole
+  namespace: default
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "create","list","update", "delete","watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "create","list","update", "delete","watch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rolebinding-dev
+  namespace: default
+roleRef:
+  kind: Role
+  name: devrole
+  apiGroup: ""
+subjects:
+- kind: User
+  name: yuwa@example.org
+  apiGroup: rbac.authorization.k8s.io

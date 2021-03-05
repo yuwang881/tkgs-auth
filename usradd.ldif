@@ -1,0 +1,25 @@
+dn: uid=yuwa,ou=users,dc=example,dc=org
+cn: yuwa
+sn: yuwa
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+gidNumber: 200015
+uidNumber: 200015
+loginShell: /bin/bash
+homeDirectory: /home/yuwa
+mail: yuwa@example.org
+uid: yuwa
+
+dn: uid=nzq,ou=users,dc=example,dc=org
+cn: nzq
+sn: nzq
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+gidNumber: 200016
+uidNumber: 200016
+loginShell: /bin/bash
+homeDirectory: /home/nzq
+mail: nzq@example.org
+uid: nzq

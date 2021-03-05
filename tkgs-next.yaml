@@ -1,0 +1,23 @@
+
+apiVersion: run.tanzu.vmware.com/v1alpha1
+kind: TanzuKubernetesCluster
+metadata:
+  name: dev-cluster
+  namespace: test
+spec:
+  setting:
+     auth:
+        oidc:
+          oidc-issuer-url: https://dex.vmware.com
+          oidc-client-id: kubernetes
+          oidc-username-claim: email
+          oidc-username-prefix: oidc
+  topology:
+    controlPlane:
+      count: 1
+      class: best-effort-xsmall
+      storageClass: gc-storage-profile
+    workers:
+      count: 3
+      class: best-effort-xsmall
+      storageClass: gc-storage-profile
